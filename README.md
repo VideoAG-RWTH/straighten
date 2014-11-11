@@ -10,7 +10,6 @@ Das Makefile.proceed kann direkt alle .MTS-Dateien im aktuellen Ordner verarbeit
 Der Aufruf ist: make [-j [n]] [POS=a] [FILE=000x.MTS] [MAIN=./main]
 
 Sämtliche Parameter sind optional, es bietet sich an, direkt im Makefile den Pfad MAIN zu setzen.
-Neben der main muss deren Sourcecode liegen. Falls dies nicht der Fall ist, muss die entsprechende Zeile zum kompilieren des Codes auskommentiert werden.
 
 mit [-j [n]] kann die Anzahl der gleichzeitig zu laufenden Jobs festgelegt werden, ohne n werden beliebig viele Jobs gemacht.
 
