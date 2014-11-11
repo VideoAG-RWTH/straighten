@@ -85,32 +85,6 @@ int best_point(std::vector<cv::Point2i> contour, float gx, float gy)
 	return bestindex;
 }
 
-template <typename T>
-cv::Vec<T,3> interpolate(Mat const &img, cv::Point_<T> const &point)
-{
-	return img.at<Vec3b>(point);
-	/*
-	int const x0 = (int)floor(point.x);
-	int const y0 = (int)floor(point.y);
-
-	T const ax = point.x - x0;
-	T const ay = point.y - y0;
-
-
-	cv::Vec<T,3> color = 0.0;
-
-	if (x0 >= 0 && x0 < img.cols-1 && y0 >= 0 && y0 < img.rows-1)
-	{
-		color += img.at<Vec3b>(Point(x0,   y0))   * (1 - ax) * (1 - ay);
-		color += img.at<Vec3b>(Point(x0+1, y0))   *      ax  * (1 - ay);
-		color += img.at<Vec3b>(Point(x0,   y0+1)) * (1 - ax) *      ay;
-		color += img.at<Vec3b>(Point(x0+1, y0+1)) *      ax  *      ay;
-	} 
-
-	return color;
-	//*/
-}
-
 std::vector<cv::Point2i> slice_contour(std::vector<cv::Point2i> contour, int begin, int end)
 {
 	std::vector<cv::Point2i> res;
