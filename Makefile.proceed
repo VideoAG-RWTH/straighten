@@ -1,0 +1,35 @@
+MAIN=./main
+
+all: all.mp4
+
+ALLMTS=$(wildcard *.MTS)
+CATMTS=concat:$$(for f in *.MTS; do echo -n $$f\|; done)
+CATAVI=concat:$$(for f in *.avi; do echo -n $$f\|; done)
+all.mp4: $(ALLMTS) $(ALLMTS:%.MTS=%.avi)
+	ffmpeg -i $(CATMTS) -i $(CATAVI) -map 0:a:0 -map 1:v:0 -c:v libx264 -c:a libfaac all.mp4
+	
+%.avi: %.MTS mask.opt $(MAIN)
+	$(MAIN) mask.opt $< $@
+
+mask.opt: mask.png $(MAIN)
+	$(MAIN) mask.opt mask.png
+
+POS=0
+FILE=$$(ls -1 *.MTS | head -n1)
+mask.png: $(ALLMTS)
+	ffmpeg -ss $(POS) -i $(FILE) -vframes 1 mask.png
+
+clean: cleanavi cleanmov cleanmask cleandep
+cleanavi:
+	-rm -f *.avi
+cleanmov:
+	-rm -f all.mov
+cleandep:
+	-rm -f mts.list avi.list
+cleanmask:
+	-rm -f mask.png mask.opt
+
+compile: $(MAIN)
+
+$(MAIN): $(MAIN).cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -Wall -O2 -funroll-loops -march=native -o $@ $<
