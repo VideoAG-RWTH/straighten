@@ -195,8 +195,14 @@ void draw_polynomial(cv::Mat image, int free, int xmin, int xmax, std::vector<fl
 		int const v = (free == 0 ? x : y);
 
 		if (0 <= u && u < image.rows && 0 <= v && v < image.cols)
-			image.at<T>(u, v) = color;
+			cv::circle(image, cv::Point(v,u), 2, cv::Scalar(color), -1);
+			//image.at<T>(u, v) = color;
 	}
+}
+
+bool contour_size(vector<Point> first, vector<Point> second)
+{
+    return cv::contourArea(first) > cv::contourArea(second);
 }
 
 options find_sides(Mat const &image)
@@ -225,19 +231,27 @@ options find_sides(Mat const &image)
 	std::vector<std::vector<cv::Point2i>> contours;
 	cv::findContours(mask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 
+	std::sort(contours.begin(), contours.end(), contour_size);
+
 	if (contours.size() != 1)
 	{
-		std::cerr << "expecting exactly one contour" << std::endl;
+		std::cerr << "expecting exactly one contour, not " << contours.size() << ". check if this is what you want." << std::endl;
 
-		cv::drawContours(disp, contours, -1, cv::Scalar(255, 0, 0), 2);
-		for (auto contour : contours)
-			for (auto point : contour)
-				cv::circle(disp, point, 5, cv::Scalar(0, 255, 0), 2);
+		if (contours.size() >= 1)
+			cv::drawContours(disp, contours, 0, cv::Scalar(0, 255, 0), 2);
+
+		for (int k = 1; k < contours.size(); k += 1)
+			cv::drawContours(disp, contours, k, cv::Scalar(255, 0, 0), 2);
 
 		cv::pyrDown(disp, tmp); cv::imshow("contours", tmp);
 
 		while (cv::waitKey(100) == -1);
 
+		cv::destroyWindow("contours");
+	}
+
+	if (contours.size() == 0)
+	{
 		exit(-1);
 	}
 
@@ -290,15 +304,15 @@ options find_sides(Mat const &image)
 	std::cout << "right fit: " << Mat(fright).t() << std::endl;
 	std::cout << "right error: " << eright << std::endl;
 
+	if (eright > 1.0 || eleft > 1.0 || etop > 1.0 || ebottom > 1.0)
+	{
+		std::cout << "WARNING: errors unacceptably large! edit the picture to enhance contrast and remove clutter." << std::endl;
+	}
+
 	opt.fntop    = ftop;
 	opt.fnbottom = fbottom;
 	opt.fnleft   = fleft;
 	opt.fnright  = fright;
-
-	draw_polynomial(disp, 0, 0, 1920, ftop, Vec3b(0, 255, 255));
-	draw_polynomial(disp, 0, 0, 1920, fbottom, Vec3b(0, 255, 255));
-	draw_polynomial(disp, 1, 0, 1080, fleft, Vec3b(0, 255, 255));
-	draw_polynomial(disp, 1, 0, 1080, fright, Vec3b(0, 255, 255));
 
 	// compute corners as intersections
 	opt.cornertl = intersect(ftop, fleft);
@@ -306,11 +320,20 @@ options find_sides(Mat const &image)
 	opt.cornerbl = intersect(fbottom, fleft);
 	opt.cornerbr = intersect(fbottom, fright);
 
-	/*
-	cv::namedWindow("contours", CV_WINDOW_NORMAL);
-	cv::pyrDown(disp, tmp); cv::imshow("contours", tmp);
-	while (cv::waitKey(100) == -1);
-	//*/
+	if (contours.size() != 1)
+	{
+		auto color = Vec3b(255, 0, 255);
+		draw_polynomial(disp, 0, 0, 1920, ftop, color);
+		draw_polynomial(disp, 0, 0, 1920, fbottom, color);
+		draw_polynomial(disp, 1, 0, 1080, fleft, color);
+		draw_polynomial(disp, 1, 0, 1080, fright, color);
+
+		//*
+		cv::namedWindow("contours", CV_WINDOW_NORMAL);
+		cv::pyrDown(disp, tmp); cv::imshow("contours", tmp);
+		while (cv::waitKey(100) == -1);
+		//*/
+	}
 
 	return opt;
 }
