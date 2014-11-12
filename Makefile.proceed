@@ -29,7 +29,7 @@ cleandep:
 cleanmask:
 	-rm -f mask.png mask.opt
 
-compile: $(MAIN)
-
-$(MAIN): $(MAIN).cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -Wall -O2 -funroll-loops -march=native -o $@ $<
+#compile: $(MAIN)
+#
+#$(MAIN): $(MAIN).cpp
+#	g++ -std=c++11 `pkg-config --cflags --libs opencv` -Wall -O2 -funroll-loops -march=native -o $@ $<
