@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 
 enable_language(CXX)
 
+if (CMAKE_COMPILER_IS_GNUCXX)
+	SET(CMAKE_CXX_FLAGS "-std=c++0x -O2 -funroll-loops")
+endif()
+
 find_package(OpenMP)
 if (OPENMP_FOUND)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
