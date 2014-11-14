@@ -27,8 +27,17 @@ struct options {
 
 	void save(std::string filename)
 	{
-		cv::FileStorage optfile(filename + ".xml", cv::FileStorage::WRITE);
-		assert(optfile.isOpened());
+		if (filename.substr(filename.length() - 4, 4) != ".xml")
+			filename += ".xml";
+
+		cv::FileStorage optfile(filename, cv::FileStorage::WRITE);
+		if (!optfile.isOpened())
+		{
+			std::cerr << "optfile could not be opened!" << std::endl;
+			std::cerr << "optfile: " << filename << std::endl;
+
+			exit(-1);
+		}
 
 		optfile << "cornertl" << cornertl;
 		optfile << "cornertr" << cornertr;
@@ -45,7 +54,10 @@ struct options {
 
 	void load(std::string filename)
 	{
-		cv::FileStorage optfile(filename + ".xml", cv::FileStorage::READ);
+		if (filename.substr(filename.length() - 4, 4) != ".xml")
+			filename += ".xml";
+
+		cv::FileStorage optfile(filename, cv::FileStorage::READ);
 		assert(optfile.isOpened());
 
 		optfile["cornertl"] >> cornertl;
@@ -416,7 +428,7 @@ void straighten(options const opt, VideoCapture &invid, VideoWriter &outvid)
 			int const dcnt = counter - lastcount;
 			double fps = dcnt / (now - lasttime);
 
-			std::cout << "\r" << (counter+1) << " of " << nframes << " (" << std::fixed << std::setprecision(1) << (100.0 * counter / nframes) << "%) frames done";
+			std::cout << "\r" << (counter+1) << " of " << nframes << " frames done (" << std::fixed << std::setprecision(1) << (100.0 * counter / nframes) << "%)";
 			std::cout << ", " << std::fixed << std::setprecision(1) << fps << " fps, ETA " << ((nframes - counter) / fps / 60) << " min  " << std::flush;
 
 			lasttime += dt;
