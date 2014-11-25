@@ -10,6 +10,8 @@
 
 using namespace cv;
 
+int global_threshold = -1; // -1 : otsu
+
 double timer()
 {
 	return cv::getTickCount() / cv::getTickFrequency();
@@ -230,8 +232,16 @@ options find_sides(Mat const &image)
 
 	Mat tmp;
 	Mat mask;
-	double threshold = cv::threshold(gray, mask, 128, 255, cv::THRESH_BINARY);
-	//double threshold = cv::threshold(gray, mask, 128, 255, cv::THRESH_OTSU | cv::THRESH_BINARY);
+	double auto_threshold = -1;
+
+	std::cout << "threshold input: " << global_threshold << "(" << (global_threshold == -1 ? "" : "not") << " using Otsu)" << std::endl;
+
+	if (global_threshold == -1)
+		auto_threshold = cv::threshold(gray, mask, 0, 255, cv::THRESH_OTSU | cv::THRESH_BINARY);
+	else
+		auto_threshold = cv::threshold(gray, mask, global_threshold, 255, cv::THRESH_BINARY);
+
+	std::cout << "threshold used: " << auto_threshold << std::endl;
 
 	//cv::pyrDown(mask, tmp); cv::imshow("threshold", tmp);
 
@@ -439,32 +449,87 @@ void straighten(options const opt, VideoCapture &invid, VideoWriter &outvid)
 	std::cout << std::endl;
 }
 
+std::string fourcc2str(int fourcc)
+{
+	char buf[5];
+	*(uint32_t*)buf = fourcc;
+	buf[4] = '\0';
+	
+	for (int i = 0; i < 4; i += 1)
+	{
+		if (buf[i] < 32 || buf[i] >= 128)
+			buf[i] = '?';
+	}
+
+	return std::string(buf);
+}
+
 int main(int argc, char **argv)
 {
-	// program optfile img
-	if (argc == 3)
+	int fourcc = CV_FOURCC('M', 'J', 'P', 'G');
+	//fourcc = -1;
+	//fourcc = CV_FOURCC('L','A','G','S');
+	//fourcc = CV_FOURCC('L', 'A', 'G', 'S');
+	//fourcc = CV_FOURCC('X', '2', '6', '4');
+
+	std::vector<std::string> args;
+	
+	for (int k = 1; k < argc; k += 1)
 	{
-		Mat img = cv::imread(std::string(argv[2]));
+		auto arg = std::string(argv[k]);
+
+		if (arg[0] != '-')
+		{
+			args.push_back(arg);
+			continue;
+		}
+
+		if (arg == "-codecpicker")
+			fourcc = -1;
+
+		else if (arg == "-codec")
+		{
+			auto const codec = std::string(argv[++k]);
+			if (codec == "pick" || codec == "-1")
+				fourcc = -1;
+			else if (codec == "H264" || codec == "h264" || codec == "H.264" || codec == "h.264")
+				fourcc = CV_FOURCC('X', '2', '6', '4');
+			else
+				fourcc = CV_FOURCC(codec[0], codec[1], codec[2], codec[3]);
+		}
+		else if (arg == "-threshold")
+		{
+			global_threshold = atoi(argv[++k]);
+		}
+	}
+
+	// program optfile img
+	if (args.size() == 2)
+	{
+		auto const optfname = args[0];
+		auto const maskfname = args[1];
+
+		Mat img = cv::imread(maskfname);
 		options opt = find_sides(img);
-		opt.save(std::string(argv[1]));
+		opt.save(optfname);
 	} 
 
 	// program optfile source out
-	else if (argc == 4)
+	else if (args.size() == 3)
 	{
-		options opt(argv[1]);
-		
-		std::string invideoname(argv[2]);
-		std::string outvideoname(argv[3]);
+		auto const optfname = args[0];
+		auto const invideoname = args[1];
+		auto const outvideoname = args[2];
 
+		options opt(optfname);
+		
 		VideoCapture invid(invideoname);
 		std::cout << "reader open? " << (invid.isOpened() ? "yes" : "NO") << std::endl;
 		if (!invid.isOpened())
 			return -1;
 
-		int fourcc = CV_FOURCC('M', 'J', 'P', 'G');
-		//fourcc = -1;
-		//fourcc = CV_FOURCC('L','A','G','S');
+		std::cout << "fourcc = " << fourcc << " (" << fourcc2str(fourcc) << ")" << std::endl;
+
 		VideoWriter outvid(
 			outvideoname,
 			fourcc,
