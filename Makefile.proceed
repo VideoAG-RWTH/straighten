@@ -8,11 +8,11 @@ CATAVI=concat:$$(for f in *.avi; do echo -n $$f\|; done)
 all.mp4: $(ALLMTS) $(ALLMTS:%.MTS=%.avi)
 	ffmpeg -i $(CATMTS) -i $(CATAVI) -map 0:a:0 -map 1:v:0 -c:v libx264 -c:a libfaac all.mp4
 	
-%.avi: %.MTS mask.opt $(MAIN)
-	$(MAIN) mask.opt $< $@
+%.avi: %.MTS mask.xml $(MAIN)
+	$(MAIN) mask $< $@
 
-mask.opt: mask.png $(MAIN)
-	$(MAIN) mask.opt mask.png
+mask.xml: mask.png $(MAIN)
+	$(MAIN) mask mask.png
 
 POS=0
 FILE=$$(ls -1 *.MTS | head -n1)
